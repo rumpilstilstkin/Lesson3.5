@@ -13,7 +13,9 @@ public class MainApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
         SugarContext.init(this);
+
         Realm.init(this);
         RealmConfiguration configuration = new RealmConfiguration.Builder().build();
         Realm.setDefaultConfiguration(configuration);

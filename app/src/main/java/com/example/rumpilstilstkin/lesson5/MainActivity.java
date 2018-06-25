@@ -174,8 +174,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             emitter.onError(e);
                         }
                     }
-                }).subscribeOn(Schedulers.io())
+                })
+                        .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
+
                 singleSaveAll.subscribeWith(CreateObserver());
                 break;
             case R.id.btnSelectAllSugar:
@@ -206,12 +208,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
                         try {
-                            List<SugarModel> tempList = SugarModel.listAll(SugarModel.class);
                             Date first = new Date();
-                            SugarModel.deleteAll(SugarModel.class);
+                            int count = SugarModel.deleteAll(SugarModel.class);
                             Date second = new Date();
                             Bundle bundle = new Bundle();
-                            bundle.putInt("count", tempList.size());
+                            bundle.putInt("count", count);
                             bundle.putLong("msek", second.getTime() - first.getTime());
                             emitter.onSuccess(bundle);
                         }
@@ -226,6 +227,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.btnSaveAllRealm:
                 Single<Bundle> singleSaveAllRealm = Single.create(new SingleOnSubscribe<Bundle>() {
+
                     @Override
                     public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
                         try {
@@ -234,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             String curAvatarUrl = "";
                             realm = Realm.getDefaultInstance();
                             Date first = new Date();
+                            realm.beginTransaction();
                             for (Model curItem : modelList) {
                                 curLogin = curItem.getLogin();
                                 curUserID = curItem.getUserId();
@@ -245,19 +248,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     realmModel.setLogin(curLogin);
                                     realmModel.setAvatarUrl(curAvatarUrl);
                                     realm.commitTransaction();
-                                } catch (Exception e) {
+                                }
+                                catch (Exception e) {
                                     realm.cancelTransaction();
                                     emitter.onError(e);
                                 }
                             }
                             Date second = new Date();
-                            RealmResults<RealmModel> tempList = realm.where(RealmModel.class).findAll();
+                            long count = realm.where(RealmModel.class).count();
                             Bundle bundle = new Bundle();
-                            bundle.putInt("count", tempList.size());
+                            bundle.putInt("count", (int)count);
                             bundle.putLong("msek", second.getTime() - first.getTime());
                             emitter.onSuccess(bundle);
                             realm.close();
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             emitter.onError(e);
                         }
                     }
@@ -267,6 +272,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btnSelectAllRealm:
                 Single<Bundle> singleSelectAllRealm = Single.create(new SingleOnSubscribe<Bundle>() {
+
                     @Override
                     public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
                         try {
@@ -279,7 +285,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             bundle.putLong("msek", second.getTime() - first.getTime());
                             emitter.onSuccess(bundle);
                             realm.close();
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             emitter.onError(e);
                         }
                     }
@@ -289,13 +296,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btnDeleteAllRealm:
                 Single<Bundle> singleDeleteAllRealm = Single.create(new SingleOnSubscribe<Bundle>() {
+
                     @Override
                     public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
                         try {
                             realm = Realm.getDefaultInstance();
                             final RealmResults<RealmModel> tempList = realm.where(RealmModel.class).findAll();
                             Date first = new Date();
-                            realm.executeTransaction(new Realm.Transaction(){
+                            realm.executeTransaction(new Realm.Transaction() {
                                 @Override
                                 public void execute(Realm realm) {
                                     tempList.deleteAllFromRealm();
@@ -307,7 +315,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             bundle.putLong("msek", second.getTime() - first.getTime());
                             emitter.onSuccess(bundle);
                             realm.close();
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             emitter.onError(e);
                         }
                     }
@@ -315,7 +324,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         .observeOn(AndroidSchedulers.mainThread());
                 singleDeleteAllRealm.subscribeWith(CreateObserver());
                 break;
-
         }
     }
 
