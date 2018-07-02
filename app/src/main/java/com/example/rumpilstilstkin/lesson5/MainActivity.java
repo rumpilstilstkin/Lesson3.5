@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
@@ -31,11 +33,14 @@ import io.realm.RealmResults;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    AppComponent appComponent;
+
+    @Inject
+    Call<List<Model>> call;
 
     private TextView mInfoTextView;
     private ProgressBar progressBar;
@@ -58,6 +63,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        appComponent = MainApp.getComponent();
+        appComponent.injectsToMainActivity(this);
+
         mInfoTextView = (TextView) findViewById(R.id.tvLoad);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         btnLoad = (Button) findViewById(R.id.btnLoad);
@@ -113,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btnLoad:
                 mInfoTextView.setText("");
-                Retrofit retrofit = null;
+               /* Retrofit retrofit = null;
                 try {
                     retrofit = new Retrofit.Builder()
                             .baseUrl("https://api.github.com/") // - обратить внимание на слэш в базовом адресе
@@ -126,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     return;
                 }
                 // подготовили вызов на сервер
-                Call<List<Model>> call = restAPI.loadUsers();
+                Call<List<Model>> call = restAPI.loadUsers();*/
                 ConnectivityManager connectivityManager =
                         (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
@@ -236,7 +245,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             String curAvatarUrl = "";
                             realm = Realm.getDefaultInstance();
                             Date first = new Date();
-                            realm.beginTransaction();
+
                             for (Model curItem : modelList) {
                                 curLogin = curItem.getLogin();
                                 curUserID = curItem.getUserId();

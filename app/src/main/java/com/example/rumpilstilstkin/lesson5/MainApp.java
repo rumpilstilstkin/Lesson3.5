@@ -10,6 +10,8 @@ import io.realm.RealmConfiguration;
 
 
 public class MainApp extends Application {
+    private static AppComponent component;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -19,6 +21,13 @@ public class MainApp extends Application {
         Realm.init(this);
         RealmConfiguration configuration = new RealmConfiguration.Builder().build();
         Realm.setDefaultConfiguration(configuration);
+
+        component = DaggerAppComponent.create();
     }
+
+    public static AppComponent getComponent() {
+        return component;
+    }
+
 }
 
