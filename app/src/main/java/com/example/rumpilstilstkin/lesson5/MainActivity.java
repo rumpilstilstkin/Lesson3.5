@@ -15,15 +15,11 @@ import android.widget.Toast;
 
 import com.orm.SugarContext;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.observers.DisposableSingleObserver;
@@ -33,14 +29,16 @@ import io.realm.RealmResults;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    AppComponent appComponent;
+    private final static String EXT_TIME = "ext_time";
+    private final static String EXT_COUNT = "ext_count";
 
-    @Inject
-    Call<List<Model>> call;
+    AppComponent appComponent;
 
     private TextView mInfoTextView;
     private ProgressBar progressBar;
@@ -83,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnSaveAllRealm.setOnClickListener(this);
         btnSelectAllRealm.setOnClickListener(this);
         btnDeleteAllRealm.setOnClickListener(this);
+
         SugarContext.init(getApplicationContext());
     }
 
@@ -105,8 +104,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onSuccess(@NonNull Bundle bundle) {
                 progressBar.setVisibility(View.GONE);
-                mInfoTextView.append("количество = " + bundle.getInt("count") +
-                                     "\n милисекунд = " + bundle.getLong("msek"));
+                mInfoTextView.append("количество = " + bundle.getInt(EXT_COUNT) +
+                                     "\n милисекунд = " + bundle.getLong(EXT_TIME));
             }
 
             @Override
@@ -122,7 +121,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btnLoad:
                 mInfoTextView.setText("");
-               /* Retrofit retrofit = null;
+                Retrofit retrofit = null;
                 try {
                     retrofit = new Retrofit.Builder()
                             .baseUrl("https://api.github.com/") // - обратить внимание на слэш в базовом адресе
@@ -135,53 +134,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     return;
                 }
                 // подготовили вызов на сервер
-                Call<List<Model>> call = restAPI.loadUsers();*/
+                Call<List<Model>> call = restAPI.loadUsers();
                 ConnectivityManager connectivityManager =
                         (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
 
                 if (networkinfo != null && networkinfo.isConnected()) {
                     // запускаем
-                    try {
-                        progressBar.setVisibility(View.VISIBLE);
-                        downloadOneUrl(call);
-                    }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                        mInfoTextView.setText(e.getMessage());
-                    }
+                    progressBar.setVisibility(View.VISIBLE);
+                    downloadOneUrl(call);
                 }
                 else {
                     Toast.makeText(this, "Подключите интернет", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.btnSaveAllSugar:
-                Single<Bundle> singleSaveAll = Single.create(new SingleOnSubscribe<Bundle>() {
-
-                    @Override
-                    public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
-                        try {
-                            String curLogin = "";
-                            String curUserID = "";
-                            String curAvatarUrl = "";
-                            Date first = new Date();
-                            for (Model curItem : modelList) {
-                                curLogin = curItem.getLogin();
-                                curUserID = curItem.getUserId();
-                                curAvatarUrl = curItem.getAvatar();
-                                SugarModel sugarModel = new SugarModel(curLogin, curUserID, curAvatarUrl);
-                                sugarModel.save();
-                            }
-                            Date second = new Date();
-                            List<SugarModel> tempList = SugarModel.listAll(SugarModel.class);
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("count", tempList.size());
-                            bundle.putLong("msek", second.getTime() - first.getTime());
-                            emitter.onSuccess(bundle);
+                Single<Bundle> singleSaveAll = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
+                    try {
+                        Date first = new Date();
+                        for (Model curItem : modelList) {
+                            new SugarModel(
+                                    curItem.getLogin(),
+                                    curItem.getUserId(),
+                                    curItem.getAvatar()
+                            ).save();
                         }
-                        catch (Exception e) {
-                            emitter.onError(e);
-                        }
+                        Date second = new Date();
+                        List<SugarModel> tempList = SugarModel.listAll(SugarModel.class);
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(EXT_COUNT, tempList.size());
+                        bundle.putLong(EXT_TIME, second.getTime() - first.getTime());
+                        emitter.onSuccess(bundle);
+                    }
+                    catch (Exception e) {
+                        emitter.onError(e);
                     }
                 })
                         .subscribeOn(Schedulers.io())
@@ -190,44 +176,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 singleSaveAll.subscribeWith(CreateObserver());
                 break;
             case R.id.btnSelectAllSugar:
-                Single<Bundle> singleSelectAll = Single.create(new SingleOnSubscribe<Bundle>() {
-
-                    @Override
-                    public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
-                        try {
-                            Date first = new Date();
-                            List<SugarModel> tempList = SugarModel.listAll(SugarModel.class);
-                            Date second = new Date();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("count", tempList.size());
-                            bundle.putLong("msek", second.getTime() - first.getTime());
-                            emitter.onSuccess(bundle);
-                        }
-                        catch (Exception e) {
-                            emitter.onError(e);
-                        }
+                Single<Bundle> singleSelectAll = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
+                    try {
+                        Date first = new Date();
+                        List<SugarModel> tempList = SugarModel.listAll(SugarModel.class);
+                        Date second = new Date();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(EXT_COUNT, tempList.size());
+                        bundle.putLong(EXT_TIME, second.getTime() - first.getTime());
+                        emitter.onSuccess(bundle);
+                    }
+                    catch (Exception e) {
+                        emitter.onError(e);
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
                 singleSelectAll.subscribeWith(CreateObserver());
                 break;
             case R.id.btnDeleteAllSugar:
-                Single<Bundle> singleDeleteAll = Single.create(new SingleOnSubscribe<Bundle>() {
-
-                    @Override
-                    public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
-                        try {
-                            Date first = new Date();
-                            int count = SugarModel.deleteAll(SugarModel.class);
-                            Date second = new Date();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("count", count);
-                            bundle.putLong("msek", second.getTime() - first.getTime());
-                            emitter.onSuccess(bundle);
-                        }
-                        catch (Exception e) {
-                            emitter.onError(e);
-                        }
+                Single<Bundle> singleDeleteAll = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
+                    try {
+                        Date first = new Date();
+                        int count = SugarModel.deleteAll(SugarModel.class);
+                        Date second = new Date();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(EXT_COUNT, count);
+                        bundle.putLong(EXT_TIME, second.getTime() - first.getTime());
+                        emitter.onSuccess(bundle);
+                    }
+                    catch (Exception e) {
+                        emitter.onError(e);
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
@@ -235,99 +213,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.btnSaveAllRealm:
-                Single<Bundle> singleSaveAllRealm = Single.create(new SingleOnSubscribe<Bundle>() {
+                Single<Bundle> singleSaveAllRealm = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
+                    try {
+                        realm = Realm.getDefaultInstance();
+                        Date first = new Date();
 
-                    @Override
-                    public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
-                        try {
-                            String curLogin = "";
-                            String curUserID = "";
-                            String curAvatarUrl = "";
-                            realm = Realm.getDefaultInstance();
-                            Date first = new Date();
-
-                            for (Model curItem : modelList) {
-                                curLogin = curItem.getLogin();
-                                curUserID = curItem.getUserId();
-                                curAvatarUrl = curItem.getAvatar();
-                                try {
-                                    realm.beginTransaction();
-                                    RealmModel realmModel = realm.createObject(RealmModel.class);
-                                    realmModel.setUserID(curUserID);
-                                    realmModel.setLogin(curLogin);
-                                    realmModel.setAvatarUrl(curAvatarUrl);
-                                    realm.commitTransaction();
-                                }
-                                catch (Exception e) {
-                                    realm.cancelTransaction();
-                                    emitter.onError(e);
-                                }
+                        for (Model curItem : modelList) {
+                            try {
+                                realm.beginTransaction();
+                                RealmModel realmModel = realm.createObject(RealmModel.class);
+                                realmModel.setUserID(curItem.getUserId());
+                                realmModel.setLogin(curItem.getLogin());
+                                realmModel.setAvatarUrl(curItem.getAvatar());
+                                realm.commitTransaction();
                             }
-                            Date second = new Date();
-                            long count = realm.where(RealmModel.class).count();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("count", (int)count);
-                            bundle.putLong("msek", second.getTime() - first.getTime());
-                            emitter.onSuccess(bundle);
-                            realm.close();
+                            catch (Exception e) {
+                                realm.cancelTransaction();
+                                emitter.onError(e);
+                            }
                         }
-                        catch (Exception e) {
-                            emitter.onError(e);
-                        }
+                        Date second = new Date();
+                        long count = realm.where(RealmModel.class).count();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(EXT_COUNT, (int) count);
+                        bundle.putLong(EXT_TIME, second.getTime() - first.getTime());
+                        emitter.onSuccess(bundle);
+                        realm.close();
+                    }
+                    catch (Exception e) {
+                        emitter.onError(e);
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
                 singleSaveAllRealm.subscribeWith(CreateObserver());
                 break;
             case R.id.btnSelectAllRealm:
-                Single<Bundle> singleSelectAllRealm = Single.create(new SingleOnSubscribe<Bundle>() {
-
-                    @Override
-                    public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
-                        try {
-                            realm = Realm.getDefaultInstance();
-                            Date first = new Date();
-                            RealmResults<RealmModel> tempList = realm.where(RealmModel.class).findAll();
-                            Date second = new Date();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("count", tempList.size());
-                            bundle.putLong("msek", second.getTime() - first.getTime());
-                            emitter.onSuccess(bundle);
-                            realm.close();
-                        }
-                        catch (Exception e) {
-                            emitter.onError(e);
-                        }
+                Single<Bundle> singleSelectAllRealm = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
+                    try {
+                        realm = Realm.getDefaultInstance();
+                        Date first = new Date();
+                        RealmResults<RealmModel> tempList = realm.where(RealmModel.class).findAll();
+                        Date second = new Date();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(EXT_COUNT, tempList.size());
+                        bundle.putLong(EXT_TIME, second.getTime() - first.getTime());
+                        emitter.onSuccess(bundle);
+                        realm.close();
+                    }
+                    catch (Exception e) {
+                        emitter.onError(e);
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
                 singleSelectAllRealm.subscribeWith(CreateObserver());
                 break;
             case R.id.btnDeleteAllRealm:
-                Single<Bundle> singleDeleteAllRealm = Single.create(new SingleOnSubscribe<Bundle>() {
-
-                    @Override
-                    public void subscribe(@NonNull SingleEmitter<Bundle> emitter) throws Exception {
-                        try {
-                            realm = Realm.getDefaultInstance();
-                            final RealmResults<RealmModel> tempList = realm.where(RealmModel.class).findAll();
-                            Date first = new Date();
-                            realm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    tempList.deleteAllFromRealm();
-                                }
-                            });
-                            Date second = new Date();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("count", tempList.size());
-                            bundle.putLong("msek", second.getTime() - first.getTime());
-                            emitter.onSuccess(bundle);
-                            realm.close();
-                        }
-                        catch (Exception e) {
-                            emitter.onError(e);
-                        }
+                Single<Bundle> singleDeleteAllRealm = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
+                    try {
+                        realm = Realm.getDefaultInstance();
+                        final RealmResults<RealmModel> tempList = realm.where(RealmModel.class).findAll();
+                        Date first = new Date();
+                        realm.executeTransaction(realm -> tempList.deleteAllFromRealm());
+                        Date second = new Date();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(EXT_COUNT, tempList.size());
+                        bundle.putLong(EXT_TIME, second.getTime() - first.getTime());
+                        emitter.onSuccess(bundle);
+                        realm.close();
+                    }
+                    catch (Exception e) {
+                        emitter.onError(e);
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
@@ -336,7 +291,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void downloadOneUrl(Call<List<Model>> call) throws IOException {
+    private void downloadOneUrl(Call<List<Model>> call) {
         call.enqueue(new Callback<List<Model>>() {
 
             @Override
