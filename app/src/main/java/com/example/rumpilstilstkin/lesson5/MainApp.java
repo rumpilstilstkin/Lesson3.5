@@ -10,7 +10,9 @@ import io.realm.RealmConfiguration;
 
 
 public class MainApp extends Application {
+
     private static AppComponent component;
+    private static AppComponentSingltone singletonComponent;
 
     @Override
     public void onCreate() {
@@ -23,11 +25,21 @@ public class MainApp extends Application {
         Realm.setDefaultConfiguration(configuration);
 
         component = DaggerAppComponent.create();
+
+        singletonComponent = DaggerAppComponentSingltone
+                .builder()
+                .appModule(new AppModule(this))
+                .build();
+        singletonComponent.inject(this);
     }
+
 
     public static AppComponent getComponent() {
         return component;
     }
 
+    public static AppComponentSingltone getComponentSingleton() {
+        return singletonComponent;
+    }
 }
 

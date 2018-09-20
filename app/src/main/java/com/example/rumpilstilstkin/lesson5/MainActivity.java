@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -19,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -29,8 +32,6 @@ import io.realm.RealmResults;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -57,6 +58,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     Realm realm;
 
+    @Inject
+    Call<List<Model>> call;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +68,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         appComponent = MainApp.getComponent();
         appComponent.injectsToMainActivity(this);
+
+        Context context = MainApp.getComponentSingleton().appContext();
+        Log.d("Dto", context.getPackageCodePath());
 
         mInfoTextView = (TextView) findViewById(R.id.tvLoad);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -116,37 +123,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         };
     }
 
+    private void loadData(){
+        mInfoTextView.setText("");
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
+
+        if (networkinfo != null && networkinfo.isConnected()) {
+            // запускаем
+            progressBar.setVisibility(View.VISIBLE);
+            downloadOneUrl(call);
+        }
+        else {
+            Toast.makeText(this, "Подключите интернет", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btnLoad:
-                mInfoTextView.setText("");
-                Retrofit retrofit = null;
-                try {
-                    retrofit = new Retrofit.Builder()
-                            .baseUrl("https://api.github.com/") // - обратить внимание на слэш в базовом адресе
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-                    restAPI = retrofit.create(Endpoints.class);
-                }
-                catch (Exception io) {
-                    mInfoTextView.setText("no retrofit: " + io.getMessage());
-                    return;
-                }
-                // подготовили вызов на сервер
-                Call<List<Model>> call = restAPI.loadUsers();
-                ConnectivityManager connectivityManager =
-                        (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
-
-                if (networkinfo != null && networkinfo.isConnected()) {
-                    // запускаем
-                    progressBar.setVisibility(View.VISIBLE);
-                    downloadOneUrl(call);
-                }
-                else {
-                    Toast.makeText(this, "Подключите интернет", Toast.LENGTH_SHORT).show();
-                }
+                loadData();
                 break;
             case R.id.btnSaveAllSugar:
                 Single<Bundle> singleSaveAll = Single.create((SingleOnSubscribe<Bundle>) emitter -> {
