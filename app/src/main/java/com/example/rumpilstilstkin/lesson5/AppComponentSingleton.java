@@ -10,7 +10,7 @@ import dagger.Component;
 
 @Singleton
 @Component(modules = {AppModule.class})
-public interface AppComponentSingltone {
+public interface AppComponentSingleton {
 
     Context appContext();
 

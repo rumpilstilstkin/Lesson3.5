@@ -1,6 +1,5 @@
 package com.example.rumpilstilstkin.lesson5;
 
-
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -33,7 +32,6 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final static String EXT_TIME = "ext_time";
@@ -59,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Realm realm;
 
     @Inject
-    Call<List<Model>> call;
+    Endpoints endpoints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         appComponent = MainApp.getComponent();
+
         appComponent.injectsToMainActivity(this);
 
         Context context = MainApp.getComponentSingleton().appContext();
@@ -88,8 +87,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnSaveAllRealm.setOnClickListener(this);
         btnSelectAllRealm.setOnClickListener(this);
         btnDeleteAllRealm.setOnClickListener(this);
-
-        SugarContext.init(getApplicationContext());
     }
 
     @Override
@@ -132,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (networkinfo != null && networkinfo.isConnected()) {
             // запускаем
             progressBar.setVisibility(View.VISIBLE);
-            downloadOneUrl(call);
+            downloadOneUrl(endpoints.loadUsers());
         }
         else {
             Toast.makeText(this, "Подключите интернет", Toast.LENGTH_SHORT).show();

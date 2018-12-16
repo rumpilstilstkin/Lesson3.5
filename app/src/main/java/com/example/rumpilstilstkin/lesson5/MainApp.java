@@ -12,7 +12,9 @@ import io.realm.RealmConfiguration;
 public class MainApp extends Application {
 
     private static AppComponent component;
-    private static AppComponentSingltone singletonComponent;
+
+
+    private static AppComponentSingleton singletonComponent;
 
     @Override
     public void onCreate() {
@@ -26,7 +28,7 @@ public class MainApp extends Application {
 
         component = DaggerAppComponent.create();
 
-        singletonComponent = DaggerAppComponentSingltone
+        singletonComponent = DaggerAppComponentSingleton
                 .builder()
                 .appModule(new AppModule(this))
                 .build();
@@ -38,7 +40,7 @@ public class MainApp extends Application {
         return component;
     }
 
-    public static AppComponentSingltone getComponentSingleton() {
+    public static AppComponentSingleton getComponentSingleton() {
         return singletonComponent;
     }
 }
