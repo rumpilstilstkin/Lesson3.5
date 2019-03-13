@@ -7,7 +7,7 @@ public class UsePrinterMain {
         InkColor color = new InkColor();
         Ink ink = new Ink(color);
         CreatorPaper creator = new CreatorPaper();
-        Paper paper = new WhitePaper(creator);
+        Paper paper = new BlackPaper();
 
 
         Printer printer = new Printer(ink, paper);

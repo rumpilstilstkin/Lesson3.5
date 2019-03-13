@@ -5,10 +5,10 @@ import android.util.Log;
 
 
 public class Printer {
-    private Ink ink;
+    private InkInterface ink;
     private Paper paper;
 
-    public Printer(Ink ink, Paper paper){
+    public Printer(InkInterface ink, Paper paper){
         this.ink = ink;
         this.paper = paper;
     }
