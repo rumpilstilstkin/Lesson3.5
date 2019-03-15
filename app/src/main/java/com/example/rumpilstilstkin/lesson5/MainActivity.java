@@ -49,10 +49,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void initDI(){
         MainApp.getComponent().injectsToMainActivity(this);
-
-        MainApp.getComponentSingleton().inject(this);
-        Context context = MainApp.getComponentSingleton().appContext();
-        Log.d("Dto", context.getPackageCodePath());
     }
 
     private void initView(){
@@ -78,7 +74,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btnLoad:
                 loadData();
-                startActivity(new Intent(this, Main2Activity.class));
                 break;
         }
     }
