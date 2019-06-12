@@ -2,7 +2,6 @@ package com.example.rumpilstilstkin.lesson5;
 
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -41,9 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         initDI();
-
         initView();
     }
 
@@ -78,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btnLoad:
                 loadData();
-                startActivity(new Intent(this, Main2Activity.class));
+                //startActivity(new Intent(this, Main2Activity.class));
                 break;
         }
     }

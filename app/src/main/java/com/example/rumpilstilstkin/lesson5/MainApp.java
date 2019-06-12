@@ -15,7 +15,10 @@ public class MainApp extends Application {
     public void onCreate() {
         super.onCreate();
 
-        component = DaggerAppComponent.builder().daggerNetModule(new DaggerNetModule(this)).build();
+        component = DaggerAppComponent
+                .builder()
+                .daggerNetModule(new DaggerNetModule(this))
+                .build();
 
         singletonComponent = DaggerAppComponentSingleton
                 .builder()

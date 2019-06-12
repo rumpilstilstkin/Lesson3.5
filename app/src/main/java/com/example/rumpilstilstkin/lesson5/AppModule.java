@@ -2,6 +2,8 @@ package com.example.rumpilstilstkin.lesson5;
 
 import android.content.Context;
 
+import javax.inject.Singleton;
+
 import dagger.Module;
 import dagger.Provides;
 
@@ -14,6 +16,7 @@ public class AppModule {
     }
 
     @Provides
+    @Singleton
     public Context provideAppContext(){
         return app;
     }
